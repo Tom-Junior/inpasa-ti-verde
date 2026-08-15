@@ -1,0 +1,17 @@
+{
+  "name": "Inpasa TI Verde",
+  "short_name": "TI Verde",
+  "description": "Portal de descarte responsável de resíduos eletrônicos da Inpasa.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f4ec",
+  "theme_color": "#0b4b38",
+  "icons": [
+    {
+      "src": "/manus-storage/inpasa_logo_mark_cb75fd1f.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}
