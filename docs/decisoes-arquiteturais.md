@@ -2,70 +2,61 @@
 
 ## Contexto
 
-O portal Inpasa TI Verde nasceu de uma base HTML/CSS estática com quatro necessidades: demonstrar uma experiência institucional de TI Verde, permitir o agendamento de descarte, comunicar indicadores e disponibilizar conteúdo educativo. A arquitetura atual prioriza clareza de código, acessibilidade e possibilidade de conexão posterior com o SGI/TI.
+O portal Inpasa TI Verde nasceu de uma base HTML/CSS institucional. A primeira evolução adotou React, TypeScript, Vite e Tailwind para separar a página em componentes, atender ao requisito de framework e garantir responsividade. O Módulo 3 acrescentou a camada de persistência, as operações CRUD e o controle de versão necessário para transformar a demonstração em uma aplicação full-stack documentada.
 
-## Decisão 1 — React + TypeScript + Vite
+## React, TypeScript e Vite
 
-**Escolha:** React 19 com TypeScript e Vite.
+React 19 organiza a interface em componentes com responsabilidade clara. TypeScript mantém contratos explícitos entre frontend, procedures tRPC e helpers de banco. Vite fornece desenvolvimento rápido e build reprodutível. A decisão foi mantida porque o framework atende simultaneamente organização, acessibilidade, manutenção e publicação.
 
-**Motivo:** o projeto precisa cumprir o requisito de uso de framework para web e evoluir além de uma página HTML monolítica. React permite separar seções em componentes; TypeScript explicita contratos de dados; Vite oferece feedback rápido durante desenvolvimento e um build estático adequado para hospedagem.
+## tRPC como contrato de aplicação
 
-**Consequência:** a equipe precisa manter a disciplina de não transformar cada seção em um componente excessivamente genérico. Componentes devem existir quando houver responsabilidade clara ou reutilização provável.
+A comunicação entre cliente e servidor usa tRPC 11, TanStack Query e SuperJSON. Isso evita duplicar tipos em REST manual e permite que a interface consuma `trpc.descartes.list`, `trpc.descartes.create` e demais procedures com inferência de tipos. A invalidação de cache depois das mutações mantém os cards e a tabela coerentes.
 
-## Decisão 2 — Arquitetura frontend-only
+## Drizzle ORM e modelo relacional
 
-**Escolha:** não introduzir backend, banco ou autenticação nesta etapa.
+Drizzle foi escolhido por permitir declarar o schema em TypeScript e gerar migrações SQL revisáveis. O domínio foi separado em `colaboradores`, `descartes` e `informativos`, com PKs, FK, unicidade, índices e restrição de peso positivo. O SQL versionado em `database/` complementa o schema tipado e serve como material didático do Módulo 3.
 
-**Motivo:** os arquivos de origem não fornecem contrato de API, regras de autorização, modelo de dados ou definição de integração com o SGI/TI. Inventar esses elementos criaria uma aparência de produto funcionando sem governança dos dados.
+A aplicação não usa dados fictícios para preencher indicadores. Quando a base está vazia, a interface exibe zero; quando há registros autorizados, os valores vêm de `COUNT` e `SUM` reais. Essa decisão evita confundir números editoriais com métricas operacionais.
 
-**Consequência:** o formulário valida no navegador e cria um protocolo local apenas para demonstrar o fluxo. Antes de produção, `handleSubmit` deve chamar uma API segura, e os números do impacto devem vir de fonte oficial.
+## Segurança e papéis
 
-## Decisão 3 — Componentes por responsabilidade
+A rota pública permite cadastrar o fluxo necessário ao agendamento, com validação de entrada no servidor. Atualização e remoção são protegidas por `adminProcedure`, que verifica o papel do usuário autenticado. A proteção não depende apenas da interface: mesmo que alguém invoque a procedure manualmente, a camada de servidor deve rejeitar uma sessão sem perfil administrativo.
 
-A página `Home.tsx` funciona como composição de alto nível. O comportamento e a marca ficam em `components/site/`, separados em `SiteHeader`, `HeroSection`, `ImpactSection`, `StepsSection`, `SchedulingForm`, `EducationSection`, `SiteFooter` e `BrandMark`. Essa organização facilita revisão por domínio e reduz o risco de alterações de estilo quebrarem o formulário.
+## Dados pessoais e LGPD
 
-## Decisão 4 — HTML semântico e acessível
+O modelo guarda apenas nome, e-mail corporativo e setor necessários para logística reversa. O texto do formulário informa a finalidade do uso. Antes de operar com dados reais, a organização deve confirmar base legal, retenção, perfis autorizados, trilha de auditoria e processo de atendimento ao titular. Logs não devem registrar tokens, cookies ou dados pessoais desnecessários.
 
-A interface usa landmarks nativos, hierarquia de headings, `label` associado a cada controle, skip link, `aria-label` apenas quando necessário e mensagens com live regions. O menu móvel não depende de hover. Foco visível, contraste e redução de movimento são tratados no CSS global.
+## Componentes por responsabilidade
 
-A acessibilidade é uma condição de implementação, não uma etapa opcional. O projeto ainda deve passar por auditoria automatizada e teste manual com teclado, zoom de 200% e leitor de tela antes de uma publicação oficial.
+`Home.tsx` funciona como composição de alto nível. A apresentação pública permanece em `components/site/`, enquanto a gestão fica em `pages/Management.tsx` e reutiliza o `DashboardLayout` do template para autenticação e navegação interna. Procedures e queries ficam no servidor, separados por contexto em `server/routers/`.
 
-## Decisão 5 — Tokens visuais centralizados
+## HTML, acessibilidade e CSS
 
-Os tokens de cor, tipografia, espaçamento conceitual, transições e breakpoints ficam em `client/src/index.css`. Componentes usam classes semânticas como `button--primary`, `metric-card--green` e `form-panel`, evitando que o valor de uma cor seja espalhado em dezenas de arquivos.
+A interface usa landmarks, headings hierárquicos, labels associados, skip link, tabela com caption, feedbacks em live regions, foco visível e controles alcançáveis por teclado. A camada CSS preserva a direção visual **Manifesto Verde Digital**, com fundo creme, verde-esmeralda para ação, azul tecnológico e coral para alertas. Breakpoints mobile-first e `prefers-reduced-motion` permanecem como requisitos de qualidade.
 
-A direção **Manifesto Verde Digital** combina creme, verde-esmeralda, azul-cobalto e coral. A paleta preserva a intenção da base enviada, porém com contraste e hierarquia mais controlados.
+## GitHub e evolução
 
-## Decisão 6 — Ativos externos ao repositório
+O GitHub é a fonte de colaboração e histórico, enquanto o CI executa checagem, testes e build. A equipe deve trabalhar em branches curtas, fazer commits pequenos e usar mensagens Conventional Commits. Migrações de banco precisam ser revisadas junto com o código que as consome; um pull request que muda schema deve explicar impacto, compatibilidade e procedimento de rollback.
 
-Imagens e mídia não ficam em `client/public` ou `client/src/assets`. O template usa URLs permanentes de armazenamento do projeto para evitar peso no deploy. Em uma publicação independente no GitHub Pages, as URLs devem ser trocadas por um CDN ou por arquivos liberados pela organização.
-
-## Decisão 7 — GitHub como fonte de colaboração
-
-O repositório inclui CI com `pnpm check` e build do Vite. Também existe um workflow opcional de GitHub Pages que publica `dist/public`. A equipe deve habilitar Pages via GitHub Actions, revisar o `VITE_BASE_PATH` e validar se os assets externos continuam disponíveis no ambiente de destino.
-
-## Fluxo futuro recomendado
+## Fluxo atual
 
 ```text
 Colaborador
     │
     ▼
 Formulário React
-    │ validação client-side
+    │ validação client-side + Zod no servidor
     ▼
-API autenticada
-    │ validação de domínio + consentimento
-    ├── Banco relacional de agendamentos
-    ├── Fila ou serviço de coleta
-    └── Dashboard oficial do SGI/TI
+tRPC / Express
+    │
+    ├── Drizzle ORM → colaboradores
+    ├── Drizzle ORM → descartes
+    └── Drizzle ORM → informativos
+    │
+    ▼
+Dashboard público e gestão administrativa
 ```
 
-## Riscos conhecidos
+## Próxima evolução recomendada
 
-O principal risco é publicar indicadores estáticos como se fossem dados em tempo real. O README e o rodapé sinalizam essa limitação, mas a integração oficial deve acontecer antes de comunicação externa.
-
-Outro risco é o uso do formulário com dados pessoais sem uma política de retenção. Por isso, a aplicação atual não envia nem armazena os campos. A decisão sobre LGPD precisa ser validada pelo responsável jurídico da organização.
-
-## Critérios para a próxima fase
-
-A evolução para backend deve definir contrato de API, autenticação corporativa, esquema de dados, perfis de acesso, trilha de auditoria, tratamento de erros, política de retenção e fonte dos indicadores. Somente depois disso o estado local deve ser substituído por persistência real.
+As próximas etapas podem incluir autenticação corporativa, trilha de auditoria para alterações, notificações de coleta, filtros por período e exportação autorizada. Essas funcionalidades devem preservar o princípio de baixo acoplamento: regras no servidor, componentes de interface focados em apresentação e banco com migrações explícitas.

@@ -1,35 +1,70 @@
 // Direção visual: Manifesto Verde Digital — formulário tratado como ponto de ação, com labels claros e confirmação objetiva.
-// O envio é demonstrativo e local: nenhum dado é transmitido enquanto a aplicação não tiver uma API autorizada.
+// O envio usa tRPC para persistir colaborador e descarte no banco relacional e atualizar as consultas derivadas.
 
-import { CheckCircle2, Send } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { CheckCircle2, Loader2, Send } from "lucide-react";
 import { type FormEvent, useState } from "react";
 
 type FormStatus = "idle" | "success" | "error";
 
-function createProtocol() {
-  const suffix = Math.floor(1000 + Math.random() * 9000);
-  return `TV-${new Date().getFullYear()}-${suffix}`;
+function localDateString() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 export function SchedulingForm() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [protocol, setProtocol] = useState("");
+  const colaboradoresQuery = trpc.colaboradores.list.useQuery();
+  const createColaborador = trpc.colaboradores.create.useMutation();
+  const createDescarte = trpc.descartes.create.useMutation();
+  const utils = trpc.useUtils();
+  const isSubmitting = createColaborador.isPending || createDescarte.isPending;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setStatus("idle");
     const form = event.currentTarget;
     const data = new FormData(form);
     const hasConsent = data.get("lgpd") === "on";
     const weight = Number(data.get("peso"));
+    const nome = String(data.get("nome") ?? "").trim();
+    const emailCorporativo = String(data.get("email") ?? "").trim().toLowerCase();
+    const setor = String(data.get("setor") ?? "").trim();
+    const tipoResiduo = String(data.get("tipo") ?? "").trim();
 
-    if (!hasConsent || !weight || weight < 1) {
+    if (!hasConsent || !weight || weight < 1 || !nome || !emailCorporativo || !setor || !tipoResiduo) {
       setStatus("error");
       return;
     }
 
-    setProtocol(createProtocol());
-    setStatus("success");
-    form.reset();
+    try {
+      const existing = colaboradoresQuery.data?.find(
+        collaborator => collaborator.emailCorporativo.toLowerCase() === emailCorporativo,
+      );
+      const collaborator = existing ?? (await createColaborador.mutateAsync({ nome, emailCorporativo, setor }));
+      if (!collaborator) throw new Error("COLLABORATOR_NOT_CREATED");
+
+      const created = await createDescarte.mutateAsync({
+        colaboradorId: collaborator.id,
+        tipoResiduo,
+        pesoEstimadoG: weight,
+        dataRegistro: localDateString(),
+      });
+      setProtocol(`TV-${new Date().getFullYear()}-${String(created?.id ?? "").padStart(4, "0")}`);
+      setStatus("success");
+      form.reset();
+      await Promise.all([
+        utils.dashboard.metrics.invalidate(),
+        utils.descartes.list.invalidate(),
+        utils.colaboradores.list.invalidate(),
+      ]);
+    } catch (error) {
+      console.error("[SchedulingForm] submit failed", error);
+      setStatus("error");
+    }
   }
 
   return (
@@ -64,20 +99,20 @@ export function SchedulingForm() {
                 <label htmlFor="setor">Setor <span aria-hidden="true">*</span></label>
                 <select id="setor" name="setor" defaultValue="" required>
                   <option value="" disabled>Selecione</option>
-                  <option value="ti">Tecnologia da Informação</option>
-                  <option value="administrativo">Administrativo</option>
-                  <option value="operacional">Operacional / Planta</option>
-                  <option value="sgi">SGI / Segurança</option>
+                  <option value="Tecnologia da Informação">Tecnologia da Informação</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Operacional / Planta">Operacional / Planta</option>
+                  <option value="SGI / Segurança">SGI / Segurança</option>
                 </select>
               </div>
               <div className="form-field">
                 <label htmlFor="tipo">Tipo de resíduo <span aria-hidden="true">*</span></label>
                 <select id="tipo" name="tipo" defaultValue="" required>
                   <option value="" disabled>Selecione</option>
-                  <option value="baterias">Pilhas e baterias</option>
-                  <option value="celulares">Celulares e carregadores</option>
-                  <option value="perifericos">Teclados, mouses e cabos</option>
-                  <option value="hardware">Placas e hardware leve</option>
+                  <option value="Pilhas e baterias">Pilhas e baterias</option>
+                  <option value="Celulares e carregadores">Celulares e carregadores</option>
+                  <option value="Teclados, mouses e cabos">Teclados, mouses e cabos</option>
+                  <option value="Placas e hardware leve">Placas e hardware leve</option>
                 </select>
               </div>
             </div>
@@ -90,13 +125,13 @@ export function SchedulingForm() {
               <input id="lgpd" name="lgpd" type="checkbox" required />
               <label htmlFor="lgpd">Autorizo o uso dos meus dados corporativos exclusivamente para o controle logístico do mutirão, conforme a LGPD.</label>
             </div>
-            {status === "error" && <p className="form-message form-message--error" role="alert">Revise os campos obrigatórios e aceite o termo de tratamento de dados.</p>}
-            {status === "success" && <p className="form-message form-message--success" role="status"><CheckCircle2 aria-hidden="true" /> Agendamento registrado nesta sessão. Protocolo <strong>{protocol}</strong>.</p>}
-            <button className="button button--primary button--full" type="submit">
-              Confirmar agendamento <Send aria-hidden="true" />
+            {status === "error" && <p className="form-message form-message--error" role="alert">Não foi possível registrar o descarte. Revise os campos obrigatórios e verifique se o ambiente de dados está disponível.</p>}
+            {status === "success" && <p className="form-message form-message--success" role="status"><CheckCircle2 aria-hidden="true" /> Agendamento persistido no banco. Protocolo <strong>{protocol}</strong>.</p>}
+            <button className="button button--primary button--full" type="submit" disabled={isSubmitting || colaboradoresQuery.isLoading}>
+              {isSubmitting ? <><Loader2 aria-hidden="true" className="animate-spin" /> Registrando…</> : <>Confirmar agendamento <Send aria-hidden="true" /></>}
             </button>
           </form>
-          <p className="form-panel__footer">Ao enviar, você verá uma confirmação local. A integração com o SGI/TI será conectada em uma próxima etapa.</p>
+          <p className="form-panel__footer">Os dados são enviados à camada controladora da aplicação para validação, persistência relacional e atualização dos indicadores.</p>
         </div>
       </div>
     </section>
