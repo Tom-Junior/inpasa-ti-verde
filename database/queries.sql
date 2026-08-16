@@ -1,5 +1,5 @@
 -- ============================================================================
--- INPASA TI VERDE — OPERAÇÕES CRUD E CONSULTAS DO MÓDULO 3
+-- TI VERDE — OPERAÇÕES CRUD E CONSULTAS DO MÓDULO 3
 -- ============================================================================
 -- Os comandos abaixo são exemplos executáveis para desenvolvimento local.
 -- Em produção, a aplicação usa parâmetros validados pelo tRPC e Drizzle.

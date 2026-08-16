@@ -1,5 +1,5 @@
 -- ============================================================================
--- INPASA TI VERDE — MODELO RELACIONAL DO MÓDULO 3
+-- TI VERDE — MODELO RELACIONAL DO MÓDULO 3
 -- ============================================================================
 -- Este arquivo documenta o DDL do domínio de descarte de e-waste.
 -- A tabela `users` é gerenciada pelo template de autenticação Manus e não é
