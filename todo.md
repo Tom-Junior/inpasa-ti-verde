@@ -1,5 +1,5 @@
 
-# Atualização — Módulo 3: Banco de dados e controle de versão
+# Atualização: Banco de dados e controle de versão
 
 - [x] Resolver conflitos gerados pela evolução para o template full-stack sem perder a identidade visual existente
 - [x] Criar schema Drizzle normalizado para colaboradores, descartes e informativos

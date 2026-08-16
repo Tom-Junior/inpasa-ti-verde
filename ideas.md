@@ -1,4 +1,4 @@
-# Direção visual — Inpasa TI Verde
+# Direção visual — TI Verde
 
 ## Abordagens consideradas
 
@@ -97,8 +97,8 @@ A organização foi pensada para funcionar em repositório público: nomes de pa
 
 ## Assets
 
-- `inpasa_logo_mark_cb75fd1f.png`: símbolo original da marca.
-- `inpasa_hero_banner_da645c7c.png`: banner visual da seção principal.
+- `logo_mark_cb75fd1f.png`: símbolo original da marca.
+- `hero_banner_da645c7c.png`: banner visual da seção principal.
 
 Os arquivos de origem ficam em `/home/ubuntu/webdev-static-assets/`; o código aponta para as URLs do armazenamento permanente do projeto.
 
