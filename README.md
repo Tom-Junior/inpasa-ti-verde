@@ -1,4 +1,4 @@
-# Inpasa TI Verde
+# TI Verde
 
 Portal web institucional e operacional para apoiar o descarte responsável de resíduos eletroeletrônicos na Inpasa Agroindustrial. A aplicação combina uma experiência pública de conscientização e agendamento com uma área autenticada de gestão, mantendo o código organizado para evolução no GitHub.
 
@@ -37,7 +37,7 @@ A área `/gestao` é um painel autenticado baseado no componente `DashboardLayou
 
 ## Pré-requisitos
 
-É necessário ter Node.js 20 ou superior, pnpm 10 ou superior e acesso a uma instância MySQL/TiDB para executar as operações de persistência. Em ambiente Manus/WebDev, `DATABASE_URL`, `JWT_SECRET` e as variáveis de OAuth são injetadas pelo projeto. Nunca publique valores reais de segredo em arquivos `.env`, commits ou screenshots.
+É necessário ter Node.js 20 ou superior, pnpm 10 ou superior e acesso a uma instância MySQL/TiDB para executar as operações de persistência. Em ambiente, `DATABASE_URL`, `JWT_SECRET` e as variáveis de OAuth são injetadas pelo projeto. Nunca publique valores reais de segredo em arquivos `.env`, commits ou screenshots.
 
 ## Instalação e execução
 
@@ -186,4 +186,5 @@ O backend não deve registrar mais dados do que os necessários para o fluxo. Lo
 
 O código pode ser distribuído sob licença MIT, desde que as autorizações institucionais sejam preservadas. Marcas, textos, documentos e ativos visuais da Inpasa permanecem sujeitos às autorizações de seus proprietários.
 
-Projeto Integrador II · Curso de Tecnologia da Informação · UFMS Digital · 2026.2. Desenvolvido para apoiar a ação de TI Verde em parceria com o Sistema de Gestão Integrada da Inpasa Agroindustrial.
+Projeto Integrador II · Curso de Tecnologia da Informação · UFMS Digital · 2026.2.
+Desenvolvido por @Tom-Junior.
